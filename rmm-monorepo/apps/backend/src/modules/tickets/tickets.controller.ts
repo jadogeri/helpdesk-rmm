@@ -4,63 +4,90 @@ import {
   Get,
   Post,
   Body,
-  Patch,
   Param,
-  Delete,
   Inject,
+  Query,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { CreateTicketDto } from './dto/create-ticket.dto';
-import { UpdateTicketDto } from './dto/update-ticket.dto';
+import {
+  CreatePortalTicketDto,
+  PortalTicketCloseDto,
+  PortalTicketLookupDto,
+  PortalTicketResponseDto,
+} from './dto/create-ticket.dto';
 import { TicketsService } from './tickets.service';
 
 @Controller('tickets')
 export class TicketsController {
   constructor( @Inject(TicketsService) private readonly ticketsService: TicketsService) {}
 
-  @Post()
-  async create(@Body() createTicketDto: CreateTicketDto) {
-    return await this.ticketsService.create(createTicketDto);
+  @Post('portal')
+  async createPortalTicket(@Body() createTicketDto: CreatePortalTicketDto) {
+    return this.ticketsService.createPortal(createTicketDto);
   }
 
-  @Post(':ticketId/attachments')
+  @Get('portal/knowledge-base')
+  async searchKnowledgeBase(@Query('q') query: string) {
+    return this.ticketsService.searchPublicKnowledgeBase(query);
+  }
+
+  @Post('portal/lookup')
+  async lookupPortalTicket(@Body() request: PortalTicketLookupDto) {
+    return this.ticketsService.lookupPortalTicket(request.reference, request.email);
+  }
+
+  @Post('portal/:ticketId/responses')
+  async addPortalResponse(
+    @Param('ticketId') ticketId: string,
+    @Body() response: PortalTicketResponseDto,
+  ) {
+    return this.ticketsService.addPortalResponse(ticketId, response);
+  }
+
+  @Post('portal/:ticketId/close')
+  async requestPortalClose(
+    @Param('ticketId') ticketId: string,
+    @Body() request: PortalTicketCloseDto,
+  ) {
+    return this.ticketsService.requestPortalClose(ticketId, request);
+  }
+
+  @Post('portal/:ticketId/attachments')
   @UseInterceptors(
-    FileInterceptor('attachment', { limits: { fileSize: 5 * 1024 * 1024 } }),
+    FileInterceptor('attachment', {
+      limits: { fileSize: 10 * 1024 * 1024 },
+      fileFilter: (_request, file, callback) => {
+        const allowedTypes = [
+          'image/png',
+          'image/jpeg',
+          'image/webp',
+          'audio/webm',
+          'audio/ogg',
+          'audio/mp4',
+          'audio/mpeg',
+          'audio/wav',
+          'audio/x-wav',
+        ];
+        callback(
+          allowedTypes.includes(file.mimetype)
+            ? null
+            : new BadRequestException('Choose a PNG, JPG, WebP image or supported audio note.'),
+          allowedTypes.includes(file.mimetype),
+        );
+      },
+    }),
   )
   async uploadAttachment(
     @Param('ticketId') ticketId: string,
+    @Body('email') email: string,
     @UploadedFile()
     file?: { originalname: string; mimetype: string; buffer: Buffer },
   ) {
     if (!file) {
       throw new BadRequestException('Choose an image to attach to the ticket.');
     }
-    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.mimetype)) {
-      throw new BadRequestException('Only PNG, JPG, and WebP screenshots are supported.');
-    }
-    return this.ticketsService.uploadAttachment(ticketId, file);
-  }
-
-  @Get()
-  async findAll() {
-    return await this.ticketsService.findAll();
-  }
-
-  // 2️⃣ Keep the dynamic route BELOW static routes
-  @Get(':id')
-  async findOne(@Param('id') id: string) {
-    return await this.ticketsService.findOne(id); 
-  }
-
-  @Patch(':id')
-  async update(@Param('id') id: string, @Body() updateTicketDto: UpdateTicketDto) {
-    return await this.ticketsService.update(id, updateTicketDto);
-  }
-
-  @Delete(':id')
-  async remove(@Param('id') id: string) {
-    return await this.ticketsService.remove(id);
+    return this.ticketsService.uploadPortalAttachment(ticketId, email, file);
   }
 }

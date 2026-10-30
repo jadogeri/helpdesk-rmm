@@ -11,15 +11,23 @@ async function forward(request: Request, pathParts: string[]) {
 
   // Validate allowed routes using centralized constants matching naked NestJS endpoints
   const isTicketAttachmentUpload = new RegExp(
-    `^${API_ENDPOINTS.UPSTREAM.TICKETS.BASE}/[0-9a-f-]{36}/attachments$`,
+    `^${API_ENDPOINTS.UPSTREAM.TICKETS.PORTAL}/[0-9a-f-]{36}/attachments$`,
+    "i",
+  ).test(path);
+  const isPortalResponseWrite = new RegExp(
+    `^${API_ENDPOINTS.UPSTREAM.TICKETS.PORTAL}/[0-9a-f-]{36}/(?:responses|close)$`,
     "i",
   ).test(path);
 
   if (
-    (method === "GET" && !collectionRoutes.has(path)) ||
+    (method === "GET" &&
+      !collectionRoutes.has(path) &&
+      path !== API_ENDPOINTS.UPSTREAM.TICKETS.PORTAL_KNOWLEDGE_BASE) ||
     (method === "POST" &&
-      path !== API_ENDPOINTS.UPSTREAM.TICKETS.BASE &&
-      !isTicketAttachmentUpload)
+      path !== API_ENDPOINTS.UPSTREAM.TICKETS.PORTAL &&
+      path !== API_ENDPOINTS.UPSTREAM.TICKETS.PORTAL_LOOKUP &&
+      !isTicketAttachmentUpload &&
+      !isPortalResponseWrite)
   ) {
     return Response.json({ message: "This service desk route is not available." }, { status: 404 });
   }

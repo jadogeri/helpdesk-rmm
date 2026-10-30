@@ -20,6 +20,12 @@ export namespace API_ENDPOINTS {
     TICKETS: {
       BASE: TICKETS_BASE,
       PORTAL: `${TICKETS_BASE}/portal`,
+      PORTAL_LOOKUP: `${TICKETS_BASE}/portal/lookup`,
+      PORTAL_KNOWLEDGE_BASE: `${TICKETS_BASE}/portal/knowledge-base`,
+      PORTAL_BY_ID: (id: string) => `${TICKETS_BASE}/portal/${id}`,
+      PORTAL_RESPONSES: (id: string) => `${TICKETS_BASE}/portal/${id}/responses`,
+      PORTAL_CLOSE: (id: string) => `${TICKETS_BASE}/portal/${id}/close`,
+      PORTAL_ATTACHMENT: (id: string) => `${TICKETS_BASE}/portal/${id}/attachments`,
       TEST: `${TICKETS_BASE}/test`,
       BY_ID: (id: string) => `${TICKETS_BASE}/${id}`,
       ATTACHMENT: (ticketId: string) => `${TICKETS_BASE}/${ticketId}/attachments`,
@@ -61,6 +67,12 @@ export namespace API_ENDPOINTS {
     TICKETS: {
       BASE: `/api/${TICKETS_BASE}`,
       PORTAL: `/api/${TICKETS_BASE}/portal`,
+      PORTAL_LOOKUP: `/api/${TICKETS_BASE}/portal/lookup`,
+      PORTAL_KNOWLEDGE_BASE: `/api/${TICKETS_BASE}/portal/knowledge-base`,
+      PORTAL_BY_ID: (id: string) => `/api/${TICKETS_BASE}/portal/${id}`,
+      PORTAL_RESPONSES: (id: string) => `/api/${TICKETS_BASE}/portal/${id}/responses`,
+      PORTAL_CLOSE: (id: string) => `/api/${TICKETS_BASE}/portal/${id}/close`,
+      PORTAL_ATTACHMENT: (id: string) => `/api/${TICKETS_BASE}/portal/${id}/attachments`,
       TEST: `/api/${TICKETS_BASE}/test`,
       BY_ID: (id: string) => `/api/${TICKETS_BASE}/${id}`,
       ATTACHMENT: (ticketId: string) => `/api/${TICKETS_BASE}/${ticketId}/attachments`,
@@ -102,9 +114,6 @@ export namespace API_ENDPOINTS {
     CUSTOMERS_BASE,
     LOCATIONS_BASE,
     TICKET_CUSTOM_STATUSES_BASE,
-    CONTACTS_BASE,
-    USERS_BASE,
     SERVICE_ITEMS_BASE,
-    TICKETS_BASE, // 👈 UNBLOCKS GET /api/tickets FROM RETURNING 404
   ] as const;
 }

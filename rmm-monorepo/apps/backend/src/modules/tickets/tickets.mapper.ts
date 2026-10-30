@@ -10,17 +10,15 @@ export class TicketApiMapperClass implements IApiMapper<CreateTicketDto, ITicket
     const rawDto = dto as any;
     
     return {
-      Title: dto.title || rawDto.Title,
-      Description: dto.description || rawDto.Description || 'No description provided.',
-      DueDate: dto.dueDate || rawDto.DueDate || null,
-      ServiceItemId: dto.serviceItemId || rawDto.ServiceItemId, 
-      ContactId: dto.contactId || rawDto.ContactId,
-      LocationId: dto.locationId || rawDto.LocationId,
-      IssueTypeId: dto.issueTypeId || rawDto.IssueTypeId || null,
-      ProjectId: dto.projectId || rawDto.ProjectId || null,
-      TicketPriorityCode: dto.ticketPriorityCode || rawDto.TicketPriorityCode || 1,
-      IsBillable: true,
-      IsTaxable: false,
+      title: dto.title || rawDto.Title,
+      description: dto.description || rawDto.Description || 'No description provided.',
+      dueDate: dto.dueDate || rawDto.DueDate || null,
+      serviceItemId: dto.serviceItemId || rawDto.ServiceItemId,
+      contactId: dto.contactId || rawDto.ContactId,
+      locationId: dto.locationId || rawDto.LocationId,
+      issueTypeId: dto.issueTypeId || rawDto.IssueTypeId || null,
+      projectId: dto.projectId || rawDto.ProjectId || null,
+      ticketPriorityCode: dto.ticketPriorityCode || rawDto.TicketPriorityCode || 2,
     };
   }
 

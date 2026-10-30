@@ -1,5 +1,29 @@
 # Turborepo starter
 
+## Ticket portal
+
+The portal creates and looks up tickets through the backend, which resolves the submitted email to an MSP Manager contact and checks the ticket's `ContactId` before showing ticket details/replies or accepting a reply, closure, or attachment upload. Email matching is an ownership filter, not proof that the requester controls the mailbox; use a verified sign-in or email one-time code before treating this as strong authentication.
+
+Optional frontend environment values:
+
+- `NEXT_PUBLIC_STATUS_PAGE_URL`: HTTPS link to the service-status page.
+- `NEXT_PUBLIC_STATUS_MESSAGE`: optional service notice shown in the portal.
+- `NEXT_PUBLIC_REMOTE_SUPPORT_URL`: HTTPS remote-support session link.
+
+Ticket priority examples used in the portal:
+
+| Code | Label | Example |
+|---:|---|---|
+| 1 | Low | Non-urgent request or minor cosmetic issue. |
+| 2 | Medium / Normal | Typical request; the default when no priority is selected. |
+| 3 | High | Work is blocked for one or more users. |
+| 4 | Urgent | Time-sensitive issue affecting business operations. |
+| 5 | Critical | Critical outage or widespread service disruption. |
+
+Code 4 (`Urgent`) is an example label; confirm the exact MSP Manager priority names configured for this tenant.
+
+The portal includes optional due date, priority, and screenshot fields; ticket replies; closure requests with a reason and optional rating; CC on replies; public knowledge-base suggestions; common issue templates; clipboard paste; opt-in browser diagnostics; voice notes; and configurable status/remote-support links. It shows MSP Manager hardware status when an asset is already associated with the ticket. Live chat, reward points, WebHID device discovery, and a local command launcher remain deferred because the current project has no chat service, reward store, device workflow, or trusted endpoint agent. Knowledge-base suggestions match titles; they are not AI-generated fixes. The supplied MSP Manager API schema has no supported operation for setting a ticket's standard status, so a closure request does not mark the ticket closed.
+
 This Turborepo starter is maintained by the Turborepo core team.
 
 ## Using this example
