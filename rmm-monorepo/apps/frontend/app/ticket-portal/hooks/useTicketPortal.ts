@@ -6,11 +6,10 @@ import { useIssueTypes } from "../queries/useIssueTypeQueries";
 import { useCreateTicket } from "../queries/useTicketQueries";
 import { useServiceItems } from "../queries/useServiceItemQueries";
 import { useLocations } from "../queries/useLocationQueries";
-import { useSearchContactByEmail } from "../queries/useContactQueries"; 
 import { API_ENDPOINTS } from "@repo/constants";
 import { apiFetcher } from "../utils/fetcher";
 
-export type Action = "create" | "view" | "update" | "delete";
+export type Action = "create" | "view" | "update" | "close";
 export type Theme = "light" | "dark";
 export type IssueOption = { id: string; label: string; children: IssueOption[] };
 export type TicketForm = {
@@ -22,13 +21,15 @@ export type TicketForm = {
   dueDate: string;
   ticketPriorityCode: string;
   screenshot: File | null;
+  voiceNote: File | null;
+  includeDiagnostics: boolean;
 };
 
 export const actions = [
   { id: "create", label: "Create ticket", description: "Tell the service desk what you need help with.", icon: "+" },
-  { id: "view", label: "View ticket", description: "Check the latest update on a ticket you submitted.", icon: "↗" },
-  { id: "update", label: "Update ticket", description: "Add details or a reply to an existing request.", icon: "↻" },
-  { id: "delete", label: "Delete ticket", description: "Request removal of a ticket you no longer need.", icon: "×" },
+  { id: "view", label: "Track ticket", description: "Check status and read ticket updates.", icon: "↗" },
+  { id: "update", label: "Reply to ticket", description: "Add information to a request you submitted.", icon: "↻" },
+  { id: "close", label: "Request closure", description: "Ask the service desk to close it and share why.", icon: "✓" },
 ] as const;
 
 const emptyForm = (): TicketForm => ({
@@ -40,6 +41,8 @@ const emptyForm = (): TicketForm => ({
   dueDate: "",
   ticketPriorityCode: "",
   screenshot: null,
+  voiceNote: null,
+  includeDiagnostics: false,
 });
 
 export function useTicketPortal() {
@@ -55,9 +58,6 @@ export function useTicketPortal() {
   const { data: rawBackendIssues, isLoading: loadingIssues, error: loadError } = useIssueTypes();
   const { data: serviceItems } = useServiceItems();
   const { data: locations } = useLocations();
-  
-  // 🔄 2. SCAN CONTACTS LIVE BY EMAIL INPUT STATE
-  const { data: contactProfile, isLoading: loadingContact } = useSearchContactByEmail(form.email);
   
   const createTicketMutation = useCreateTicket();
 
@@ -94,26 +94,39 @@ export function useTicketPortal() {
 
     if (!resolvedIssueTypeId) return;
 
-    // Relational Guard: Extract the unique contact payload ID safely
-    const resolvedContactId = contactProfile?.id || contactProfile?.id || (contactProfile as any)?.ContactId;
-    
-    if (!resolvedContactId) {
-      alert("Verification Failed: The entered email address could not be matched with any active service-desk contact profiles.");
-      return;
-    }
-
     // fallback configuration IDs
     const defaultServiceItem = serviceItems?.[0]?.id || "00000000-0000-0000-0000-000000000000";
-    const defaultLocation = locations?.[0]?.id || contactProfile?.locationId || (contactProfile as any)?.LocationId || "00000000-0000-0000-0000-000000000000";
+    const defaultLocation = locations?.[0]?.id || "00000000-0000-0000-0000-000000000000";
     const defaultProject = "00000000-0000-0000-0000-000000000000"; 
 
     setAttachmentWarning("");
+    let measuredLatency = "unavailable";
+    if (form.includeDiagnostics) {
+      const startedAt = performance.now();
+      try {
+        await fetch(API_ENDPOINTS.PROXY.ISSUE_TYPES.BASE, { cache: "no-store" });
+        measuredLatency = `${Math.round(performance.now() - startedAt)} ms`;
+      } catch {
+        measuredLatency = "unavailable";
+      }
+    }
+    const description = form.includeDiagnostics
+      ? `${form.description.trim()}\n\nBrowser diagnostics (shared with support):\n${[
+          `Browser: ${navigator.userAgent}`,
+          `Viewport: ${window.innerWidth} × ${window.innerHeight}`,
+          `Screen: ${window.screen.width} × ${window.screen.height}`,
+          `Language: ${navigator.language}`,
+          `Time zone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}`,
+          `Connection: ${navigator.onLine ? "online" : "offline"}`,
+          `Portal API response time: ${measuredLatency}`,
+        ].join("\n")}`
+      : form.description.trim();
 
     const ticketPayload: Record<string, string | number> = {
+      email: form.email.trim(),
       title: form.title.trim(),
-      description: form.description.trim(),
+      description,
       issueTypeId: resolvedIssueTypeId,
-      contactId: resolvedContactId,
       serviceItemId: defaultServiceItem,
       locationId: defaultLocation,
       projectId: defaultProject,
@@ -130,19 +143,26 @@ export function useTicketPortal() {
       const createdTicket = await createTicketMutation.mutateAsync(ticketPayload);
       const ticketId = text(createdTicket as Row, "ticketId", "TicketId");
 
-      if (form.screenshot) {
+      const attachments = [form.screenshot, form.voiceNote].filter(
+        (file): file is File => file !== null,
+      );
+      if (attachments.length) {
         if (!ticketId) {
-          setAttachmentWarning("Ticket created, but its screenshot could not be attached. Contact your service desk with the ticket number.");
+          setAttachmentWarning("Ticket created, but an attachment could not be added. Contact your service desk with the ticket number.");
         } else {
-          try {
-            const attachment = new FormData();
-            attachment.append("attachment", form.screenshot);
-            await apiFetcher(
-              API_ENDPOINTS.PROXY.TICKETS.ATTACHMENT(ticketId),
-              { method: "POST", body: attachment },
-            );
-          } catch {
-            setAttachmentWarning("Ticket created, but the screenshot could not be attached. Contact your service desk with the ticket number.");
+          for (const file of attachments) {
+            try {
+              const attachment = new FormData();
+              attachment.append("attachment", file);
+              attachment.append("email", form.email.trim());
+              await apiFetcher(
+                API_ENDPOINTS.PROXY.TICKETS.PORTAL_ATTACHMENT(ticketId),
+                { method: "POST", body: attachment },
+              );
+            } catch {
+              setAttachmentWarning("Ticket created, but one or more attachments could not be added. Contact your service desk with the ticket number.");
+              break;
+            }
           }
         }
       }
@@ -164,7 +184,7 @@ export function useTicketPortal() {
     form, 
     setForm, 
     issues, 
-    loading: loadingIssues || loadingContact, 
+    loading: loadingIssues,
     loadError: loadError instanceof Error ? loadError.message : loadError ? String(loadError) : "", 
     submitting: createTicketMutation.isPending,
     submitError: createTicketMutation.error instanceof Error ? createTicketMutation.error.message : "", 

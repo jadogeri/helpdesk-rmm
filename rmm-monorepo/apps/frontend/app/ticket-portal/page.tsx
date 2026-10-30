@@ -8,7 +8,7 @@ import { CreateTicketForm } from "./components/CreateTicketForm";
 import { PortalHeader } from "./components/PortalHeader";
 import { PortalHero } from "./components/PortalHero";
 import { useTicketPortal } from "./hooks/useTicketPortal";
-import { LockedActionView } from "./components/LockedActionView";
+import { TicketAccessView } from "./components/TicketAccessView";
 import { SidePanel } from "./components/SidePanel";
 import styles from "../page.module.css";
 import Providers from "./provider";
@@ -39,11 +39,7 @@ function TicketPortalContent() {
               submitTicket={portal.submitTicket}
             />
           ) : (
-            <LockedActionView 
-              selectedAction={portal.selectedAction} 
-              activeAction={portal.activeAction} 
-              chooseAction={portal.chooseAction} 
-            />
+            <TicketAccessView mode={portal.selectedAction} />
           )}
         </AnimatePresence>
         
