@@ -4,3 +4,48 @@
 @media(max-width:760px){.shell{padding:0 20px 22px}.topbar{height:64px}.online{display:none}.hero{margin:37px auto 22px;align-items:flex-start;flex-direction:column;gap:16px}.hero h1{font-size:48px}.heroBadge{min-width:0;width:100%;padding:13px 15px}.actionNav{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.actionCard{min-height:73px}.contentGrid{grid-template-columns:1fr;gap:14px}.formCard,.lockedCard{padding:25px 22px}.sidePanel{grid-template-columns:1fr 1fr;align-items:start}.sideCard{grid-row:span 2}.footer{margin-top:23px}}
 @media(max-width:520px){.shell{padding-left:14px;padding-right:14px}.brand{font-size:12px}.brandMark{width:31px;height:31px}.brandSub{font-size:9px}.themeToggle{padding:8px 9px}.themeToggle span:last-child{font-size:0}.themeToggle span:first-child{font-size:17px}.hero h1{font-size:43px}.actionCard{grid-template-columns:31px 1fr;gap:3px 8px;padding:10px}.actionIcon{width:30px;height:30px;font-size:18px}.actionLabel{font-size:11px}.actionDescription{font-size:9px}.formCard,.lockedCard{padding:22px 17px}.cardHeader h2{font-size:21px}.sectionHeading p{font-size:10px}.formFooter{align-items:stretch;flex-direction:column}.submitButton{width:100%}.secureNote{order:2}.sidePanel{grid-template-columns:1fr}.sideCard{grid-row:auto}.footer{font-size:8px;letter-spacing:.08em}}
 @media(prefers-reduced-motion:reduce){.actionCard,.themeToggle,.submitButton,.backButton,.fieldFull input,.fieldFull select,.fieldFull textarea{transition:none}.spinner{animation-duration:1.8s}}
+
+/* Compact ticket portal layout and optional fields */
+.shell{padding-bottom:18px}
+.topbar{height:62px}
+.hero{margin:23px auto 15px;align-items:center}
+.hero h1{font-size:clamp(34px,4vw,48px);margin:10px 0 8px}
+.heroBadge{padding:12px 15px}
+.actionNav{margin-bottom:14px;gap:9px}
+.actionCard{min-height:66px;padding:10px 13px}
+.contentGrid{gap:16px}
+.formCard{padding:22px 26px}
+.cardHeader{padding-bottom:16px}
+.formSection{padding:16px 0}
+.sectionHeading{margin-bottom:12px}
+.fieldFull{margin-bottom:11px;gap:6px}
+.fieldFull input,.fieldFull select{min-height:39px}
+.fieldFull textarea{min-height:82px}
+.requestFields,.optionalGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px 14px}
+.requestFields .fieldFull,.optionalGrid .fieldFull{margin:0}
+.fieldWide{grid-column:1/-1}
+.optionalDetails{padding:12px 0;border-bottom:1px solid var(--line)}
+.optionalSummary{display:flex;align-items:center;justify-content:space-between;gap:14px;cursor:pointer;list-style:none}
+.optionalSummary::-webkit-details-marker{display:none}
+.optionalSummary>span:first-child{display:grid;gap:3px}
+.optionalSummary strong{font-size:11px}
+.optionalSummary small{font-size:10px;color:var(--muted)}
+.optionalChevron{display:grid;place-items:center;width:25px;height:25px;border:1px solid var(--line);border-radius:8px;color:var(--teal);font-size:17px;transition:transform .18s}
+.optionalDetails[open] .optionalChevron{transform:rotate(45deg)}
+.optionalGrid{padding-top:14px}
+.optionalGrid .fieldFull>span{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.optionalGrid .fieldFull>span em{font-size:9px;font-style:normal;font-weight:500;color:var(--muted)}
+.optionalGrid input[type=file]{min-height:38px;padding:7px 9px;font-size:11px}
+.fileInfo{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:10px;color:var(--muted);overflow-wrap:anywhere}
+.fileInfo button{border:0;background:none;color:var(--teal);font:700 10px inherit;cursor:pointer}
+.fieldError{font-size:10px;color:#b83d2b;font-style:normal}
+.formFooter{padding-top:15px}
+.sideCard{padding:17px 18px 12px}
+.sideCard h3{margin:10px 0 7px}
+.sideCard>p{margin-bottom:12px}
+.tipLine{padding:9px 0}
+.footer{margin-top:17px}
+@media(max-width:1000px){.formCard{padding:20px 22px}}
+@media(max-width:760px){.hero{margin:25px auto 16px;align-items:flex-start;flex-direction:row}.hero h1{font-size:38px}.heroBadge{min-width:210px}.formCard{padding:20px 18px}.sidePanel{gap:10px}}
+@media(max-width:600px){.hero{flex-direction:column;gap:10px}.hero h1{font-size:36px}.heroBadge{width:auto;min-width:0}.requestFields,.optionalGrid{grid-template-columns:1fr}.fieldWide{grid-column:auto}}
+@media(max-width:520px){.formCard{padding:19px 15px}.hero{margin-top:20px}.optionalGrid .fieldFull>span{align-items:flex-start}}

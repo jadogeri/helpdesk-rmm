@@ -35,6 +35,7 @@ function TicketPortalContent() {
               submitError={portal.submitError}
               ticketNumber={portal.ticketNumber}
               setTicketNumber={portal.setTicketNumber}
+              attachmentWarning={portal.attachmentWarning}
               submitTicket={portal.submitTicket}
             />
           ) : (

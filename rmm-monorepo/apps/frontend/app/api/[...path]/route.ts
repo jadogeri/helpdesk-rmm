@@ -10,9 +10,16 @@ async function forward(request: Request, pathParts: string[]) {
   const method = request.method.toUpperCase();
 
   // Validate allowed routes using centralized constants matching naked NestJS endpoints
+  const isTicketAttachmentUpload = new RegExp(
+    `^${API_ENDPOINTS.UPSTREAM.TICKETS.BASE}/[0-9a-f-]{36}/attachments$`,
+    "i",
+  ).test(path);
+
   if (
-    (method === "GET" && !collectionRoutes.has(path)) || 
-    (method === "POST" && path !== API_ENDPOINTS.UPSTREAM.TICKETS.BASE)
+    (method === "GET" && !collectionRoutes.has(path)) ||
+    (method === "POST" &&
+      path !== API_ENDPOINTS.UPSTREAM.TICKETS.BASE &&
+      !isTicketAttachmentUpload)
   ) {
     return Response.json({ message: "This service desk route is not available." }, { status: 404 });
   }
@@ -22,10 +29,14 @@ async function forward(request: Request, pathParts: string[]) {
   const target = baseUrl + "/" + path + (method === "GET" ? incomingUrl.search : "");
 
   try {
+    const headers = new Headers({ accept: "application/json" });
+    const contentType = request.headers.get("content-type");
+    if (method === "POST" && contentType) headers.set("content-type", contentType);
+
     const upstream = await fetch(target, {
       method,
-      headers: method === "POST" ? { "content-type": "application/json", accept: "application/json" } : { accept: "application/json" },
-      body: method === "POST" ? await request.text() : undefined,
+      headers,
+      body: method === "POST" ? await request.arrayBuffer() : undefined,
       cache: "no-store",
       signal: AbortSignal.timeout(15000),
     });
