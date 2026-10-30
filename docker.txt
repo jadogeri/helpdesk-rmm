@@ -1,0 +1,8 @@
+
+📋 The Key Commands to Watch Your Container
+
+
+Objective	Command	What it does
+Stream Live Logs	docker logs -f msp_ticketing_cache	Streams container console outputs in real time (Ctrl + C to exit)
+View Recent Logs	docker logs --tail 50 msp_ticketing_cache	Displays only the last 50 lines of logs
+Inspect Startup Diagnostic	docker logs msp_ticketing_cache | grep DIAGNOSTICS -A 5	Isolates the password character count block from startup

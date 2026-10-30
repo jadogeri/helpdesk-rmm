@@ -1,0 +1,105 @@
+# RESOURCES MIGHT BE NEEDED
+• Contacts (Provides contactId based on the verified email lookup) 
+• IssueTypes (Provides issueTypeId to categorize the ticket) DONE
+• Locations (Required: Provides locationId to link where the issue/contact belongs) DONE
+• ProjectsView (Optional/Conditional: Provides projectId if the ticket belongs to a specific contract or project)
+• ServiceItems (Required: Provides serviceItemId which links the ticket to a service contract or SLA)
+• TicketNote / TicketResponse (Used after ticket creation to attach notes)
+• Tickets (The core endpoint where you POST this exact payload) DONE
+
+
+
+
+
+📊 Feature Tradeoffs & Priorities
+
+
+Feature	Value to Users	Implementation Complexity	Recommendation
+🖼️ Screenshot / File Uploads	Critical. Users hate typing out long error codes. A picture is worth a thousand words for helpdesk routing.	Low-Medium. You already have TicketsAttachments tables ready in your database payload mapping schema.	🎯 Build this next.
+💬 Ticket Replies / Responses	High. Essential if a technician asks a follow-up question and the user needs to reply without creating a duplicate ticket.	Medium. You already have the TicketsResponses and TicketsNotes OData entities mapped out in your backend.	🛠️ Build second.
+⚡ Live Chat with Technician	Medium-High. Great experience, but requires technicians to be sitting actively on the other end staring at a dashboard.	High. Requires WebSockets (socket.io), stateful room allocation, and live messaging cache layers.	⏳ Postpone for now.
+
+
+
+
+version: '3.8'
+
+services:
+  postgres_db:
+    image: postgres:16-alpine
+    container_name: msp_ticketing_db
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: always
+    networks:
+      - msp_network
+
+  redis_cache:
+    image: redis:7-alpine
+    container_name: msp_ticketing_cache
+    entrypoint: >
+      sh -c "
+      echo '========================================';
+      echo '🔍 DOCKER REDIS ENVIRONMENT INITIALIZATION DIAGNOSTICS';
+      echo 'Target Port Variable: ${REDIS_PORT:-6379}';
+      echo 'Parsed Password Character Count: '$${#REDIS_PASSWORD};
+      echo '========================================';
+      exec redis-server --requirepass \"$$REDIS_PASSWORD\" --loglevel verbose
+      "
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redisdata:/data
+    restart: always
+    networks:
+      - msp_network
+
+  # 🚀 YOUR NEW BFF MICROSERVICE RUNTIME CONTAINER LAYER
+  bff_backend:
+    build:
+      context: .
+      dockerfile: ./apps/backend/Dockerfile # Targets your NestJS app's multi-stage Dockerfile
+    container_name: msp_ticketing_bff
+    restart: always
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - PORT=${PORT:-3001}
+      # 🛡️ NETWORK ROUTING OPTIMIZATION: 
+      # Because your BFF lives inside the same Docker network as your cache and database,
+      # it targets their internal service names directly ("redis_cache" and "postgres_db")
+      - REDIS_HOST=redis_cache
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - DB_HOST=postgres_db
+      - DB_PORT=5432
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - HELPDESK_URL=${HELPDESK_URL}
+      - HELPDESK_API_KEY=${HELPDESK_API_KEY}
+    ports:
+      # Exposes your API gateway port cleanly to the local system or reverse proxy
+      - "${PORT:-3001}:${PORT:-3001}"
+    depends_on:
+      postgres_db:
+        condition: service_healthy # Wait for database health checks before initializing proxy listeners
+      redis_cache:
+        condition: service_started
+    networks:
+      - msp_network
+
+volumes:
+  pgdata:
+  redisdata:
+
+networks:
+  msp_network:
+    name: msp_ticketing_network

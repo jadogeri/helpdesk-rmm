@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  postgres_db:
+    image: postgres:16-alpine
+    container_name: msp_ticketing_db
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      # 🛡️ Expose port natively matching your environment mapping configurations cleanly
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: always
+    networks:
+      - msp_network
+
+  redis_cache:
+    image: redis:7-alpine
+    container_name: msp_ticketing_cache
+    entrypoint: >
+      sh -c "
+      echo '========================================';
+      echo '🔍 DOCKER REDIS ENVIRONMENT INITIALIZATION DIAGNOSTICS';
+      echo 'Target Port Variable: ${REDIS_PORT:-6379}';
+      echo 'Parsed Password Character Count: '$${#REDIS_PASSWORD};
+      echo '========================================';
+      exec redis-server --requirepass \"$$REDIS_PASSWORD\" --loglevel verbose
+      "
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redisdata:/data
+    restart: always
+    networks:
+      - msp_network
+
+volumes:
+  pgdata:
+  redisdata:
+
+networks:
+  msp_network:
+    name: msp_ticketing_network
