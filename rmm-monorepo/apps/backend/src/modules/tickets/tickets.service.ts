@@ -16,6 +16,12 @@ interface IODataCollectionWrapper<T> {
   value: T[];
 }
 
+interface TicketAttachmentFile {
+  originalname: string;
+  mimetype: string;
+  buffer: Buffer;
+}
+
 @Injectable()
 export class TicketsService {
   private readonly logger = new Logger(TicketsService.name);
@@ -65,7 +71,8 @@ export class TicketsService {
     const title = createTicketDto.title || rawDto.Title;
     const description = createTicketDto.description || rawDto.Description;
     const dueDate = createTicketDto.dueDate || rawDto.DueDate;
-    const priorityCode = createTicketDto.ticketPriorityCode || rawDto.ticketPriorityCode || 1;
+    const priorityCode =
+      createTicketDto.ticketPriorityCode ?? rawDto.ticketPriorityCode ?? 1;
 
     const [contactExists, locationExists] = await Promise.all([
       this.contactRepo.findOne({ id: contactId }),
@@ -103,6 +110,22 @@ export class TicketsService {
     //return this.mapToInternalTicket(response);
     return response;
 
+  }
+
+  async uploadAttachment(
+    ticketId: string,
+    file: TicketAttachmentFile,
+  ): Promise<unknown> {
+    const formData = new FormData();
+    formData.append(
+      'attachment',
+      new Blob([new Uint8Array(file.buffer)], { type: file.mimetype }),
+      file.originalname,
+    );
+    return this.helpdeskClient.postMultipart(
+      API_ENDPOINTS.UPSTREAM.TICKETS.ATTACHMENT(ticketId),
+      formData,
+    );
   }
 
   async findAll(): Promise<ITicket[]> {

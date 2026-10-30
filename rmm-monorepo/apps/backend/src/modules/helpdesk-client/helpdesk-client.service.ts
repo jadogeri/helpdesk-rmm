@@ -33,6 +33,20 @@ export class HelpdeskClientService {
     }
   }
 
+  // Upload a file while allowing Axios to add the multipart boundary.
+  async postMultipart<T>(url: string, payload: FormData): Promise<T> {
+    try {
+      const { data } = await firstValueFrom(
+        this.httpService.post<T>(url, payload, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        }),
+      );
+      return data;
+    } catch (error) {
+      this.handleError(`POST request failed for route: ${url}`, error);
+    }
+  }
+
   // Centralized wrapper for PATCH requests
   async patch<T>(url: string, payload: unknown): Promise<T> {
     try {

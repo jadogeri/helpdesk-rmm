@@ -7,11 +7,22 @@ import { useCreateTicket } from "../queries/useTicketQueries";
 import { useServiceItems } from "../queries/useServiceItemQueries";
 import { useLocations } from "../queries/useLocationQueries";
 import { useSearchContactByEmail } from "../queries/useContactQueries"; 
+import { API_ENDPOINTS } from "@repo/constants";
+import { apiFetcher } from "../utils/fetcher";
 
 export type Action = "create" | "view" | "update" | "delete";
 export type Theme = "light" | "dark";
 export type IssueOption = { id: string; label: string; children: IssueOption[] };
-export type TicketForm = { email: string; title: string; description: string; issueTypeId: string; childIssueTypeId: string };
+export type TicketForm = {
+  email: string;
+  title: string;
+  description: string;
+  issueTypeId: string;
+  childIssueTypeId: string;
+  dueDate: string;
+  ticketPriorityCode: string;
+  screenshot: File | null;
+};
 
 export const actions = [
   { id: "create", label: "Create ticket", description: "Tell the service desk what you need help with.", icon: "+" },
@@ -20,12 +31,22 @@ export const actions = [
   { id: "delete", label: "Delete ticket", description: "Request removal of a ticket you no longer need.", icon: "×" },
 ] as const;
 
-const emptyForm = (): TicketForm => ({ email: "", title: "", description: "", issueTypeId: "", childIssueTypeId: "" });
+const emptyForm = (): TicketForm => ({
+  email: "",
+  title: "",
+  description: "",
+  issueTypeId: "",
+  childIssueTypeId: "",
+  dueDate: "",
+  ticketPriorityCode: "",
+  screenshot: null,
+});
 
 export function useTicketPortal() {
   const [form, setForm] = useState<TicketForm>(emptyForm);
   const [selectedAction, setSelectedAction] = useState<Action>("create");
   const [theme, setTheme] = useState<Theme>("light");
+  const [attachmentWarning, setAttachmentWarning] = useState("");
   
   // 🟢 FIXED: Converted to a safe state hook to avoid "Cannot assign to constant" compilation errors
   const [isInitialized, setIsInitialized] = useState(false);
@@ -86,28 +107,50 @@ export function useTicketPortal() {
     const defaultLocation = locations?.[0]?.id || contactProfile?.locationId || (contactProfile as any)?.LocationId || "00000000-0000-0000-0000-000000000000";
     const defaultProject = "00000000-0000-0000-0000-000000000000"; 
 
-    const computedDueDate = new Date();
-    computedDueDate.setDate(computedDueDate.getDate() + 7);
+    setAttachmentWarning("");
 
-    // 🚀 POST full compliant DTO dataset block
-    createTicketMutation.mutate(
-      {
-        title: form.title.trim(),
-        description: form.description.trim(),
-        issueTypeId: resolvedIssueTypeId,
-        contactId: resolvedContactId,
-        serviceItemId: defaultServiceItem,
-        locationId: defaultLocation,
-        projectId: defaultProject,
-        dueDate: computedDueDate.toISOString(),
-        ticketPriorityCode: 1, 
-      },
-      {
-        onSuccess: () => {
-          setForm(emptyForm());
-        },
+    const ticketPayload: Record<string, string | number> = {
+      title: form.title.trim(),
+      description: form.description.trim(),
+      issueTypeId: resolvedIssueTypeId,
+      contactId: resolvedContactId,
+      serviceItemId: defaultServiceItem,
+      locationId: defaultLocation,
+      projectId: defaultProject,
+    };
+
+    if (form.dueDate) {
+      ticketPayload.dueDate = new Date(`${form.dueDate}T12:00:00`).toISOString();
+    }
+    if (form.ticketPriorityCode.trim()) {
+      ticketPayload.ticketPriorityCode = Number(form.ticketPriorityCode);
+    }
+
+    try {
+      const createdTicket = await createTicketMutation.mutateAsync(ticketPayload);
+      const ticketId = text(createdTicket as Row, "ticketId", "TicketId");
+
+      if (form.screenshot) {
+        if (!ticketId) {
+          setAttachmentWarning("Ticket created, but its screenshot could not be attached. Contact your service desk with the ticket number.");
+        } else {
+          try {
+            const attachment = new FormData();
+            attachment.append("attachment", form.screenshot);
+            await apiFetcher(
+              API_ENDPOINTS.PROXY.TICKETS.ATTACHMENT(ticketId),
+              { method: "POST", body: attachment },
+            );
+          } catch {
+            setAttachmentWarning("Ticket created, but the screenshot could not be attached. Contact your service desk with the ticket number.");
+          }
+        }
       }
-    );
+
+      setForm(emptyForm());
+    } catch {
+      // The mutation exposes the create error in submitError.
+    }
   }
 
   function chooseAction(action: Action) {
@@ -125,6 +168,7 @@ export function useTicketPortal() {
     loadError: loadError instanceof Error ? loadError.message : loadError ? String(loadError) : "", 
     submitting: createTicketMutation.isPending,
     submitError: createTicketMutation.error instanceof Error ? createTicketMutation.error.message : "", 
+    attachmentWarning,
     ticketNumber: createTicketMutation.data ? text(createTicketMutation.data as Row, "ticketNumber", "TicketNumber") : "", 
     setTicketNumber: () => createTicketMutation.reset(),
     selectedAction, 

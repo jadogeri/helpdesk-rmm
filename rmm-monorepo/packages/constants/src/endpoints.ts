@@ -22,6 +22,7 @@ export namespace API_ENDPOINTS {
       PORTAL: `${TICKETS_BASE}/portal`,
       TEST: `${TICKETS_BASE}/test`,
       BY_ID: (id: string) => `${TICKETS_BASE}/${id}`,
+      ATTACHMENT: (ticketId: string) => `${TICKETS_BASE}/${ticketId}/attachments`,
       ALL_FILTERED: `${TICKETS_BASE}?%24top=5&%24orderby=CreatedDate+desc`,
     },
     CUSTOMERS: {
@@ -62,6 +63,7 @@ export namespace API_ENDPOINTS {
       PORTAL: `/api/${TICKETS_BASE}/portal`,
       TEST: `/api/${TICKETS_BASE}/test`,
       BY_ID: (id: string) => `/api/${TICKETS_BASE}/${id}`,
+      ATTACHMENT: (ticketId: string) => `/api/${TICKETS_BASE}/${ticketId}/attachments`,
       ALL_FILTERED: `/api/${TICKETS_BASE}?%24top=5&%24orderby=CreatedDate+desc`,
     },
     CUSTOMERS: {

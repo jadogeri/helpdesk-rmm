@@ -1,4 +1,17 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Inject } from '@nestjs/common';
+import {
+  BadRequestException,
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Inject,
+  UploadedFile,
+  UseInterceptors,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { CreateTicketDto } from './dto/create-ticket.dto';
 import { UpdateTicketDto } from './dto/update-ticket.dto';
 import { TicketsService } from './tickets.service';
@@ -9,8 +22,25 @@ export class TicketsController {
 
   @Post()
   async create(@Body() createTicketDto: CreateTicketDto) {
-   
     return await this.ticketsService.create(createTicketDto);
+  }
+
+  @Post(':ticketId/attachments')
+  @UseInterceptors(
+    FileInterceptor('attachment', { limits: { fileSize: 5 * 1024 * 1024 } }),
+  )
+  async uploadAttachment(
+    @Param('ticketId') ticketId: string,
+    @UploadedFile()
+    file?: { originalname: string; mimetype: string; buffer: Buffer },
+  ) {
+    if (!file) {
+      throw new BadRequestException('Choose an image to attach to the ticket.');
+    }
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.mimetype)) {
+      throw new BadRequestException('Only PNG, JPG, and WebP screenshots are supported.');
+    }
+    return this.ticketsService.uploadAttachment(ticketId, file);
   }
 
   @Get()

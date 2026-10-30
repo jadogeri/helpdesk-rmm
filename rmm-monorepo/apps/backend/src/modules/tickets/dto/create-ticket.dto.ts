@@ -9,11 +9,11 @@ export class CreateTicketDto implements CreateTicketPayload {
   })
   title!: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'The ISO standard target deadline string',
     example: '2026-12-31T23:59:59.000Z',
   })
-  dueDate!: string;
+  dueDate?: string | null;
 
   @ApiProperty({ description: 'Associated system service item UUID' })
   serviceItemId!: string;

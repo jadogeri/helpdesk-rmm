@@ -2,7 +2,7 @@ export interface ITicket {
   ticketId?: string;
   title: string;
   description?: string;
-  dueDate: string;
+  dueDate?: string | null;
   ticketPriorityCode?: number;
   serviceItemId: string;
   contactId: string;
